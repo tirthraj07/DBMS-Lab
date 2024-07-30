@@ -178,7 +178,7 @@ INSERT INTO Student (s_name, cgpa, s_dob, branch_id, drive_id, t_id) VALUES
             );
 
 
--- ASSIGNMENT 1
+-- ASSIGNMENT 3
 
 -- Find the Student details and Placement details using NATURAL JOIN
 SELECT * FROM Student NATURAL JOIN PlacementDrive;
