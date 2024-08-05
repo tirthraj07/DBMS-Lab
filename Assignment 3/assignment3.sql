@@ -133,7 +133,7 @@ INSERT INTO Student (s_name, cgpa, s_dob, branch_id, drive_id, t_id) VALUES
                 7.98, 
                 '2004-06-20', 
                 (SELECT branch_id FROM Branch WHERE branch_name = 'Electronics and Telecommunication'), 
-                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Bajaj Finserv' AND package = CAST(20.10 AS FLOAT)),
+                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Bajaj Finserv' AND package = CAST(3.53 AS FLOAT)),
                 (SELECT t_id FROM Training WHERE tcompany_name = 'Siemens' and t_year = '2024')
             ),
             (
@@ -141,7 +141,7 @@ INSERT INTO Student (s_name, cgpa, s_dob, branch_id, drive_id, t_id) VALUES
                 8.63, 
                 '2004-12-29', 
                 (SELECT branch_id FROM Branch WHERE branch_name = 'Information Technology'), 
-                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Tiaa India' AND package = CAST(10.48 AS FLOAT)),
+                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Tiaa India' AND package = CAST(4.95 AS FLOAT)),
                 (SELECT t_id FROM Training WHERE tcompany_name = 'Siemens' and t_year = '2024')
             ),
             (
@@ -165,7 +165,7 @@ INSERT INTO Student (s_name, cgpa, s_dob, branch_id, drive_id, t_id) VALUES
                 6.55, 
                 '2004-05-12', 
                 (SELECT branch_id FROM Branch WHERE branch_name = 'Information Technology'), 
-                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Tiaa India' AND package = CAST(10.48 AS FLOAT)),
+                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Tiaa India' AND package = CAST(4.95 AS FLOAT)),
                 (SELECT t_id FROM Training WHERE tcompany_name = 'Barclays' and t_year = '2026')
             ),
             (
@@ -173,7 +173,7 @@ INSERT INTO Student (s_name, cgpa, s_dob, branch_id, drive_id, t_id) VALUES
                 6.99, 
                 '2004-03-28', 
                 (SELECT branch_id FROM Branch WHERE branch_name = 'Electronics and Telecommunication'), 
-                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Bajaj Finserv' AND package = CAST(20.10 AS FLOAT)),
+                (SELECT drive_id FROM PlacementDrive WHERE pcompany_name='Bajaj Finserv' AND package = CAST(3.53 AS FLOAT)),
                 (SELECT t_id FROM Training WHERE tcompany_name = 'Siemens' and t_year = '2024')
             );
 
@@ -371,6 +371,8 @@ PlacementDrive.package > 5
 ON Branch.branch_id = StudentPlacements.branch_id 
 GROUP BY Branch.branch_id;
 
+SELECT * FROM branchwise_placement_2026;
+
 /*
 +-----------------------------------+-------------------------------------------------------------+
 | Branch                            | Number of Students placed with CTC > 5 and Training in 2026 |
@@ -379,4 +381,38 @@ GROUP BY Branch.branch_id;
 | Information Technology            |                                                           1 |
 | Electronics and Telecommunication |                                                           0 |
 +-----------------------------------+-------------------------------------------------------------+
+*/
+
+
+CREATE VIEW branchwise_placement_statistics_2026 AS
+SELECT
+Branch.branch_name AS 'Branch',
+package_table.min_pkg AS 'Minimum Package in 2026',
+package_table.avg_pkg AS 'Average Package in 2026',
+package_table.max_pkg AS 'Highest Package in 2026'
+FROM Branch
+LEFT JOIN (
+    SELECT
+    branch_id,
+    MIN(PlacementDrive.package) AS min_pkg,
+    AVG(PlacementDrive.package) AS avg_pkg,
+    MAX(PlacementDrive.package) AS max_pkg
+    FROM Student
+    INNER JOIN PlacementDrive
+    ON Student.drive_id = PlacementDrive.drive_id
+    INNER JOIN Training
+    ON Student.t_id = Training.t_id
+    WHERE Training.t_year = '2026'
+    GROUP BY Student.branch_id
+) AS package_table
+ON Branch.branch_id = package_table.branch_id;
+
+/*
++-----------------------------------+-------------------------+-------------------------+-------------------------+
+| Branch                            | Minimum Package in 2026 | Average Package in 2026 | Highest Package in 2026 |
++-----------------------------------+-------------------------+-------------------------+-------------------------+
+| Computer Engineering              |                      11 |      18.755999755859374 |                   33.53 |
+| Electronics and Telecommunication |                    NULL |                    NULL |                    NULL |
+| Information Technology            |                    4.95 |      13.294999599456787 |                   21.64 |
++-----------------------------------+-------------------------+-------------------------+-------------------------+
 */
