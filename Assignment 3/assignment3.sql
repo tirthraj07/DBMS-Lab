@@ -352,6 +352,23 @@ SELECT * FROM Student LEFT JOIN Training ON Student.t_id = Training.t_id;
 
 -- Perform Manipulation on simple view-Insert, update, delete, drop view.
 
+-- Create a view to show min, avg and max cgpa from Students
+CREATE VIEW cgpa_statistics AS 
+SELECT min(cgpa) AS 'Minimum CGPA', 
+avg(cgpa) AS 'Average CGPA', 
+max(cgpa) AS 'Highest CGPA' 
+FROM Student;
+
+/*
++--------------+-------------------+--------------+
+| Minimum CGPA | Average CGPA      | Highest CGPA |
++--------------+-------------------+--------------+
+|         6.55 | 8.378181847659024 |         9.88 |
++--------------+-------------------+--------------+
+*/
+
+DROP VIEW cgpa_statistics;
+
 -- Create a view to show the number of students placed branchwise that took training in year 2026
 CREATE VIEW branchwise_placement_2026 AS 
 SELECT 
@@ -387,9 +404,9 @@ SELECT * FROM branchwise_placement_2026;
 CREATE VIEW branchwise_placement_statistics_2026 AS
 SELECT
 Branch.branch_name AS 'Branch',
-package_table.min_pkg AS 'Minimum Package in 2026',
-package_table.avg_pkg AS 'Average Package in 2026',
-package_table.max_pkg AS 'Highest Package in 2026'
+package_table.min_pkg AS 'Minimum_Package_in_2026',
+package_table.avg_pkg AS 'Average_Package_in_2026',
+package_table.max_pkg AS 'Highest_Package_in_2026'
 FROM Branch
 LEFT JOIN (
     SELECT
@@ -416,3 +433,4 @@ ON Branch.branch_id = package_table.branch_id;
 | Information Technology            |                    4.95 |      13.294999599456787 |                   21.64 |
 +-----------------------------------+-------------------------+-------------------------+-------------------------+
 */
+
