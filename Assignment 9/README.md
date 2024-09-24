@@ -50,7 +50,7 @@ A document is a set of __key-value pairs__. Documents have dynamic schema. Dynam
 
 Example Collection
 
-```json
+```bash
 {
    _id: ObjectId(7df78ad8902c)
    title: 'MongoDB Overview', 
@@ -121,7 +121,7 @@ db.myCollection.insertOne({ name: "Alice", age: 25, city: "New York" })
 ```
 
 Insert multiple doccument
-```json
+```bash
 db.myCollection.insertMany([
   { name: "Bob", age: 30, city: "Los Angeles" },
   { name: "Charlie", age: 35, city: "Chicago" }
@@ -191,7 +191,7 @@ __Comparison Operators in MongoDB__
 #### Update Collection
 
 Update One Document
-```json
+```bash
 db.myCollection.updateOne(
   { name: "Alice" }, // Filter
   { $set: { age: 26 } } // Update operation
@@ -200,7 +200,7 @@ db.myCollection.updateOne(
 
 Update Many Document
 
-```json
+```bash
 db.myCollection.updateMany(
   { city: "Chicago" }, // Filter
   { $set: { city: "Houston" } } // Update operation
