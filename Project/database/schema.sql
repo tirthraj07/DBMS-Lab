@@ -66,17 +66,19 @@ CREATE TABLE IF NOT EXISTS seats (
     seat_number INT NOT NULL,
     row_num VARCHAR(5) NOT NULL,
     screen_id INT,
+    UNIQUE(screen_id, seat_number, row_num),
     seat_type_id INT,
     FOREIGN KEY(screen_id) REFERENCES screens(screen_id),
     FOREIGN KEY(seat_type_id) REFERENCES seat_types(seat_type_id)
+
 );
 
 CREATE TABLE IF NOT EXISTS showtimes (
     showtime_id INT PRIMARY KEY AUTO_INCREMENT,
 
-    showtime_start_time TIME NOT NULL,
+    showtime_start_time DATETIME NOT NULL,
     -- derived entity
-    showtime_end_time TIME NOT NULL,
+    showtime_end_time DATETIME NOT NULL,
 
     -- foreign keys
     movie_id INT,
@@ -96,6 +98,8 @@ CREATE TABLE IF NOT EXISTS pricings (
     screen_id INT,
     showtime_id INT,
     seat_type_id INT,
+
+    UNIQUE(screen_id, showtime_id, seat_type_id),
 
     -- dependencies
     CHECK (price >= 0),
@@ -123,4 +127,16 @@ CREATE TABLE IF NOT EXISTS bookings (
     -- checks
     CHECK (booking_total_seats > 0),
     CHECK (booking_total_amount >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS booking_seats (
+    booking_seat_id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT,
+    FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
+    seat_id INT,
+    FOREIGN KEY (seat_id) REFERENCES seats(seat_id) ON DELETE CASCADE,
+    showtime_id INT,
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(showtime_id) ON DELETE CASCADE,    
+    
+    UNIQUE(showtime_id, seat_id)
 );

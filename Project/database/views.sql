@@ -35,5 +35,62 @@ CREATE VIEW movie_image_details AS
     ON
         movie_images.movie_id = movies.movie_id;
 
+CREATE VIEW screen_details AS
+    SELECT
+        screens.*,
+        theatres.theatre_name,
+        theatres.theatre_location
+    FROM
+        screens
+    INNER JOIN theatres
+    ON screens.theatre_id = theatres.theatre_id;
 
--- PRIVATE
+CREATE VIEW seat_details AS
+    SELECT
+        seats.seat_id,
+        seats.row_num,
+        seats.seat_number,
+        seats.seat_type_id,
+        seat_types.seat_type_name,
+        screen_details.*
+    FROM
+        seats
+    INNER JOIN seat_types
+    ON seats.seat_type_id = seat_types.seat_type_id
+    INNER JOIN screen_details
+    ON seats.screen_id = screen_details.screen_id;
+
+CREATE VIEW showtimes_details AS 
+    SELECT
+        showtimes.showtime_id,
+        showtimes.showtime_start_time,
+        showtimes.showtime_end_time,
+        movies.movie_id,
+        movies.movie_title,
+        movies.movie_director_name,
+        screen_details.*
+    FROM
+        showtimes
+    INNER JOIN movies
+    ON showtimes.movie_id = movies.movie_id
+    INNER JOIN screen_details
+    ON showtimes.screen_id = screen_details.screen_id;
+
+
+CREATE VIEW booking_details AS 
+    SELECT
+        bookings.booking_id,
+        bookings.booking_total_seats,
+        bookings.booking_date,
+        bookings.booking_total_amount,
+        customers.customer_id,
+        customers.customer_full_name,
+        customers.customer_email,
+        customers.customer_phone,
+        showtimes_details.*
+    FROM
+        bookings
+    INNER JOIN customers ON customers.customer_id = bookings.customer_id
+    INNER JOIN showtimes_details ON showtimes_details.showtime_id = bookings.showtime_id;
+
+-- SHOW FULL TABLES IN dbms_project;
