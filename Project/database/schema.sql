@@ -6,6 +6,14 @@ CREATE TABLE IF NOT EXISTS customers (
     customer_phone VARCHAR(15) UNIQUE NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS customer_logs (
+    customer_id INT NOT NULL,
+    customer_full_name VARCHAR(100) NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    customer_action TEXT,
+    action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS movie_genres (
     movie_genre_id INT PRIMARY KEY AUTO_INCREMENT,
     movie_genre_name VARCHAR(50) UNIQUE NOT NULL
