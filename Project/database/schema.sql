@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS showtimes (
 
 CREATE TABLE IF NOT EXISTS pricings (
     pricing_id INT PRIMARY KEY AUTO_INCREMENT,
-    price INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
 
     -- foreign keys
     screen_id INT,
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- derived
-    booking_total_amount INT NOT NULL,
+    booking_total_amount DECIMAL(10, 2) NOT NULL,
 
     -- foreign keys
     customer_id INT,
