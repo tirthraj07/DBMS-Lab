@@ -26,12 +26,18 @@ CREATE TABLE IF NOT EXISTS movies (
     movie_description TEXT NOT NULL, 
     movie_duration TIME NOT NULL,
     movie_rating INT DEFAULT 0,
-
-    movie_genre_id INT,
-
-    FOREIGN KEY (movie_genre_id) REFERENCES movie_genres(movie_genre_id),
     CHECK (movie_rating >= 0 AND movie_rating <= 10)
 );
+
+CREATE TABLE IF NOT EXISTS movie_genre_mapping (
+    movie_id INT NOT NULL,
+    movie_genre_id INT NOT NULL,
+
+    PRIMARY KEY (movie_id, movie_genre_id),
+    FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_genre_id) REFERENCES movie_genres(movie_genre_id) ON DELETE CASCADE
+);
+
 
 CREATE TABLE IF NOT EXISTS movie_images (
     movie_image_id INT PRIMARY KEY AUTO_INCREMENT,

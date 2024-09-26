@@ -19,9 +19,12 @@ CREATE VIEW movie_details AS
         movie_genres.movie_genre_name
     FROM
         movies
-    LEFT JOIN
+    JOIN
+        movie_genre_mapping
+    ON movies.movie_id = movie_genre_mapping.movie_id
+    JOIN
         movie_genres
-    ON movies.movie_genre_id = movie_genres.movie_genre_id;
+    ON movie_genre_mapping.movie_genre_id = movie_genres.movie_genre_id;
 
 CREATE VIEW movie_image_details AS
     SELECT
