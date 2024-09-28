@@ -226,8 +226,38 @@ const addMovieGenres = async(req,res) => {
     }
 }
 
-const addNewImages = async(req,res) => {
-    res.json({message:'To be implemented'})
+const addNewImages = async(req,res)=>{
+
+    const movie_id = req.params.id;
+
+    const image_location = req.body.image_location;
+
+    if(!movie_id || !image_location){
+        res.status(400).json({error:"Incomplete or invalid payload"})
+        return;
+    }
+
+    const insertQuery = `
+        INSERT INTO movie_images (movie_id, movie_image_location)
+        VALUES (?,?)
+    `;
+
+    try{
+        const fetchMovie = await query("SELECT movie_id FROM movies WHERE movie_id = ?", [movie_id]);
+        if(fetchMovie.length == 0){
+            res.status(404).json({error:'movie does not exists'});
+            return;
+        }
+
+        await query(insertQuery, [movie_id, image_location]);
+        res.status(201).json({success:'Image Uploaded Successfully'})
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).json({error:JSON.stringify(error)});
+    }
+
+
 }
 
 const getMovieGenres = async(req, res) => {

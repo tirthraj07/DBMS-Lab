@@ -22,6 +22,6 @@ v1_router.get('/genres/:id', getGenre)
 
 v1_router.post('/movies', addNewMovie)
 v1_router.post('/movies/:id/genres', addMovieGenres) 
-v1_router.post('/movies/:id/images', addNewImages)  // --TODO
+v1_router.post('/movies/:id/images', addNewImages)
 
 module.exports = v1_router
