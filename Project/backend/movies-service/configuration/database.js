@@ -26,4 +26,55 @@ async function query(sql, params = []) {
   }
 }
 
-module.exports = { query };
+/**
+ * Begins a transaction.
+ * @returns {Promise<Connection>} - Returns a MySQL connection object in a transaction state.
+ */
+async function beginTransaction() {
+  const connection = await poolPromise.getConnection();
+  try {
+    await connection.beginTransaction();
+    return connection;
+  } catch (error) {
+    connection.release();
+    throw error;
+  }
+}
+
+/**
+ * Commits the current transaction.
+ * @param {Connection} connection - The MySQL connection object in the transaction.
+ * @returns {Promise<void>}
+ */
+async function commit(connection) {
+  try {
+    await connection.commit();
+    connection.release();
+  } catch (error) {
+    connection.release();
+    throw error;
+  }
+}
+
+/**
+ * Rolls back the current transaction.
+ * @param {Connection} connection - The MySQL connection object in the transaction.
+ * @returns {Promise<void>}
+ */
+async function rollback(connection) {
+  try {
+    await connection.rollback();
+    connection.release();
+  } catch (error) {
+    connection.release();
+    throw error;
+  }
+}
+
+
+module.exports = { 
+  query,
+  beginTransaction,
+  commit,
+  rollback
+};

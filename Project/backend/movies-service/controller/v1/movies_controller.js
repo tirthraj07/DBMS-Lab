@@ -176,8 +176,54 @@ const addNewMovie = async (req, res)=>{
     }
 }
 
-const addNewGenres = async(req,res) => {
-    res.json({message:'To Be implemented'})
+const addMovieGenres = async(req,res) => {
+    const movie_id = req.params.id;
+    const genreIds = req.body.genreIds;
+    try{
+        if (!Array.isArray(genreIds) || genreIds.length === 0) {
+            return res.status(400).json({ message: 'Invalid or empty genreIds array' });
+        }
+
+        const validGenresQuery = `
+            SELECT movie_genre_id FROM  movie_genres WHERE movie_genre_id IN (?)
+        `;
+        const validGenres = await query(validGenresQuery, [genreIds]);
+
+        const validIds = validGenres.map(genre => genre.movie_genre_id);
+
+        const invalidGenreIds = genreIds.filter(genreId => !validIds.includes(genreId));
+
+        if (invalidGenreIds.length > 0) {
+            console.log('Error: Some genres were not found');
+            console.log(invalidGenreIds);
+            return res.status(400).json({
+                error: "Some genres were not found",
+                invalidGenreIds
+            });
+        }
+
+        const fetchExistingMovieMappings = (await query(`SELECT movie_genre_id FROM movie_genre_mapping WHERE movie_id = ?`,[movie_id]));
+        const existingId = fetchExistingMovieMappings.map(genre => genre.movie_genre_id);
+        
+
+        const idsToBeInserted = validIds.filter(id => !existingId.includes(id))
+
+        const insertQuery = `INSERT INTO movie_genre_mapping (movie_id, movie_genre_id) VALUES (?,?)`;
+        
+
+        for(let genre_id of idsToBeInserted){
+            await query(insertQuery,[movie_id, genre_id])
+        }
+        
+        res.status(201).json({
+            success: `Genres successfully mapped to movie with ID: ${movie_id}`,
+            mappedGenres: validIds,
+        })
+    }
+    catch(e){
+        console.log(e);
+        res.status(500).json({error:e})
+    }
 }
 
 const addNewImages = async(req,res) => {
@@ -185,7 +231,24 @@ const addNewImages = async(req,res) => {
 }
 
 const getMovieGenres = async(req, res) => {
-    res.json({message: 'To be implemented'})
+    try{
+        const id = req.params.id;
+        
+        const fetchMovieGenreMappings = await query("SELECT * FROM movie_genre_mapping JOIN movie_genres ON movie_genre_mapping.movie_genre_id = movie_genres.movie_genre_id WHERE movie_id = ?", [id]);
+
+        const genres = []
+        for(let movie of fetchMovieGenreMappings){
+            genres.push({genre_id: movie.movie_genre_id, genre:movie.movie_genre_name})
+        }
+
+        const response = {genres:genres}
+        
+        res.status(200).json(response)
+    }
+    catch(e){
+        console.log(e)
+        res.status(5000).json({error:e});
+    }
 }
 
 module.exports = {
@@ -196,6 +259,6 @@ module.exports = {
     getMovieGenres,
     getMovieImages,
     addNewMovie,
-    addNewGenres,
+    addMovieGenres,
     addNewImages
 };
