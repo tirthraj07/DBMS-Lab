@@ -9,6 +9,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbms_project.seats TO 'theatre-service'@
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbms_project.showtimes TO 'theatre-service'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbms_project.pricings TO 'theatre-service'@'%';
 
+GRANT SELECT ON dbms_project.movies TO 'theatre-service'@'%';
+
 -- 2. Grant read-only permissions on the views
 GRANT SELECT ON dbms_project.screen_details TO 'theatre-service'@'%';
 GRANT SELECT ON dbms_project.seat_details TO 'theatre-service'@'%';
