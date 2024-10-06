@@ -242,6 +242,202 @@ This service allows for managing theatres, screens, users, and seat information.
      }
      ```
 
+
+
+### 8. `/theatres/:theatre_id/screens/:screen_id/showtimes`
+
+#### GET Request
+
+Retrieve all showtimes for a specific screen.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes`
+- **Method**: `GET`
+- **Query Parameters**:
+  - `upcoming`: (optional) Set to `true` to return only showtimes that start from today onward.
+- **Response**:
+  ```json
+  [
+    {
+      "showtime_id": 1,
+      "screen_id": 1,
+      "movie_id": 101,
+      "showtime_start_time": "2024-10-06T10:00:00",
+      "showtime_end_time": "2024-10-06T12:00:00"
+    },
+    ...
+  ]
+  ```
+
+#### POST Request
+
+Create a new showtime for a specific screen.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes`
+- **Method**: `POST`
+- **Payload**:
+  ```json
+  {
+    "movie_id": 101,
+    "showtime_start_time": "2024-10-06T10:00:00"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "showtime": {
+      "showtime_id": 1,
+      "screen_id": 1,
+      "movie_id": 101,
+      "showtime_start_time": "2024-10-06T10:00:00",
+      "showtime_end_time": "2024-10-06T12:00:00"
+    }
+  }
+  ```
+
+---
+
+### 9. `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id`
+
+#### GET Request
+
+Retrieve details of a specific showtime.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "screen_id": 1,
+    "movie_id": 101,
+    "showtime_start_time": "2024-10-06T10:00:00",
+    "showtime_end_time": "2024-10-06T12:00:00"
+  }
+  ```
+
+#### PATCH Request
+
+Update a showtime's details.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id`
+- **Method**: `PATCH`
+- **Payload** (at least one field is required):
+  ```json
+  {
+    "movie_id": 102,
+    "screen_id": 1,
+    "showtime_start_time": "2024-10-06T11:00:00",
+    "showtime_end_time": "2024-10-06T13:00:00"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": "Showtime updated successfully"
+  }
+  ```
+
+---
+
+### 10. `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings`
+
+#### GET Request
+
+Retrieve the pricing information for a specific showtime.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "showtime_id": 1,
+    "screen_id": 1,
+    "pricing": [
+      {
+        "pricing_id": 1,
+        "price": 100,
+        "seat_type_id": 2
+      },
+      ...
+    ]
+  }
+  ```
+
+#### POST Request
+
+Create new pricing for a specific showtime.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings`
+- **Method**: `POST`
+- **Payload**:
+  ```json
+  {
+    "price": 100,
+    "seat_type_id": 2
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "showtime_id": 1,
+    "screen_id": 1,
+    "pricing": {
+      "pricing_id": 1,
+      "price": 100,
+      "seat_type_id": 2
+    }
+  }
+  ```
+
+---
+
+### 11. `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings/:pricing_id`
+
+#### GET Request
+
+Retrieve details of specific pricing.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings/:pricing_id`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "pricing_id": 1,
+    "price": 100,
+    "screen_id": 1,
+    "showtime_id": 1,
+    "seat_type_id": 2
+  }
+  ```
+
+#### PATCH Request
+
+Update specific pricing information.
+
+- **URL**: `/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id/pricings/:pricing_id`
+- **Method**: `PATCH`
+- **Payload** (at least one field is required):
+  ```json
+  {
+    "price": 120,
+    "seat_type_id": 3
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": "Pricing updated successfully",
+    "pricing": {
+      "pricing_id": 1,
+      "price": 120,
+      "seat_type_id": 3,
+      "screen_id": 1,
+      "showtime_id": 1
+    }
+  }
+  ```
+
+---
+
 ## Error Handling
 
 - If a request fails, the API returns an error message in the following format:
