@@ -1,6 +1,5 @@
 const express = require('express');
 const v1_router = express.Router();
-const { query } = require("../configuration/database")
 const { 
     getMovies,
     getMovie,
