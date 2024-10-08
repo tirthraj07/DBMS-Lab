@@ -89,8 +89,14 @@ v1_router.route('/theatres/:theatre_id/users')
             
             const hashedPassword = cryptograph.generateSaltHash(theatre_user_password);
 
-            await query('INSERT INTO theatre_users (theatre_user_full_name, theatre_user_email, theatre_user_password, theatre_id) VALUES (?, ?, ?, ?)', [theatre_user_full_name, theatre_user_email, hashedPassword, theatre_id]);
-            res.json({ "success": "User created successfully" });
+            const result = await query('INSERT INTO theatre_users (theatre_user_full_name, theatre_user_email, theatre_user_password, theatre_id) VALUES (?, ?, ?, ?)', 
+                [theatre_user_full_name, theatre_user_email, hashedPassword, theatre_id]);
+
+            const newUser = await query('SELECT theatre_user_id, theatre_user_full_name, theatre_user_email, theatre_id FROM theatre_users WHERE theatre_user_id = ?', 
+                [result.insertId]);
+
+            res.json({ success: "User created successfully", user: newUser[0] });
+
         } catch (err) {
             res.status(500).json({ "error": err.message });
         }

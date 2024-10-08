@@ -30,7 +30,7 @@ auth_router.post('/login', async (req, res) => {
 
             const token = jwt.createToken(jwt_payload)
 
-            res.cookie('token', token, {
+            res.cookie('userToken', token, {
                 httpOnly: true,      
                 secure: process.env.NODE_ENV === 'production', 
                 maxAge: 7 * 24 * 60 * 60 * 1000 
