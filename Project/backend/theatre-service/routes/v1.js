@@ -13,6 +13,53 @@ v1_router.get('/seat-types', async (req, res) => {
     }
 });
 
+v1_router.get('/search-theatres/search',(async (req, res) => {
+        const { theatre_name } = req.query;
+
+        try {
+            if (theatre_name) {
+                const result = await query('SELECT * FROM theatres WHERE theatre_name  LIKE ?', [`%${theatre_name}%`]);
+                res.json(result);
+            } else {
+                res.json([]);  // Return an empty array if no query parameter is provided
+            }
+        } catch (err) {
+            res.status(500).json({ "error": err.message });
+        }
+}));
+
+
+v1_router.get('/showtimes', async (req, res) => {
+    try {
+        // Get the movie_id from the query parameters
+        const { movie_id } = req.query;
+
+        // If movie_id is provided, fetch showtime details for the movie
+        if (movie_id) {
+            const fetchShowtimesQuery = `
+                SELECT * FROM showtimes_details 
+                WHERE movie_id = ?
+            `;
+            const results = await query(fetchShowtimesQuery, [movie_id]);
+
+            // Return showtime details or an empty array if no showtimes found
+            return res.status(200).json({
+                data: results.length > 0 ? results : []
+            });
+        } else {
+            // If no movie_id is provided, return an error response
+            return res.status(400).json({
+                error: 'movie_id is required'
+            });
+        }
+    } catch (error) {
+        console.error('Error fetching showtime details:', error);
+        return res.status(500).json({
+            message: 'Server error',
+        });
+    }
+});
+
 v1_router.route('/theatres')
     .get(async (req, res) => {
         try {
