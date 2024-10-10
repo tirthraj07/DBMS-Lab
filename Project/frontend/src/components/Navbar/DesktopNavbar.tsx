@@ -2,12 +2,39 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useState } from "react";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+
 export default function DesktopNavbar({
     isLoggedIn
 }:{
     isLoggedIn: boolean
 }){
-
+    async function handleLogout(){
+        const response = await fetch('/api/user/logout',{
+            method:'POST'
+        });
+        const data = await response.json();
+        if(data.error){
+            console.log(data.error);
+            alert(data.error);
+        }
+        
+        if(data.success){
+            alert("Logout Successful")
+            window.location.href='/user/login'
+        }
+    }
 
     return(
         <>
@@ -26,14 +53,31 @@ export default function DesktopNavbar({
                         <div className="flex flex-row-reverse px-4">
                             {isLoggedIn&&
                                 <>
-                                    <div className="flex justify-center align-middle">
-                                    <Link
+                                    <div className="flex justify-center align-middle items-center">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant={"default"} className="text-lg font-medium" style={{backgroundColor:"#1c1c84"}}>Logout</Button>
+                                        </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Do you want to logout?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Click 'Logout' to end the session
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    {/* <Link
                                         href={"/logout"}
                                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-white"
                                         prefetch={false}
                                     >
                                         <span className="text-lg font-medium">Logout</span>
-                                    </Link>
+                                    </Link> */}
                                 </div>
                                 </>
                             }

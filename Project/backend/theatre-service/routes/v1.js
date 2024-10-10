@@ -149,6 +149,20 @@ v1_router.route('/theatres/:theatre_id/users')
         }
     });
 
+v1_router.route('/theatres/:theatre_id/users/:user_id')
+.get(async (req, res) => {
+    const { theatre_id,user_id } = req.params;
+    try {
+        const [user] = await query('SELECT theatre_user_id, theatre_user_full_name, theatre_user_email FROM theatre_users WHERE theatre_id = ? AND theatre_user_id = ?', [theatre_id, user_id]);
+        if(!user){
+            res.status(404).json({ "error": "theatre user not found" });            
+        }
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ "error": err.message });
+    }
+})
+
 // /theatres/:theatre_id/screens (GET, POST)
 v1_router.route('/theatres/:theatre_id/screens')
     .get(async (req, res) => {
@@ -161,15 +175,17 @@ v1_router.route('/theatres/:theatre_id/screens')
         }
     })
     .post(async (req, res) => {
-        const { screen_name, screen_total_seats } = req.body;
+        const { screen_name, screen_total_seats,no_of_rows,max_row_seats } = req.body;
         const { theatre_id } = req.params;
         try {
-            const result = await query('INSERT INTO screens (screen_name, screen_total_seats, theatre_id) VALUES (?, ?, ?)', [screen_name, screen_total_seats, theatre_id]);
+            const result = await query('INSERT INTO screens (screen_name, screen_total_seats, theatre_id, no_of_rows, max_row_seats) VALUES (?, ?, ?, ?, ?)', [screen_name, screen_total_seats, theatre_id,no_of_rows,max_row_seats]);
             const createdScreen = {
                 screen_id: result.insertId,
                 theatre_id,
                 screen_name,
-                screen_total_seats
+                screen_total_seats,
+                no_of_rows,
+                max_row_seats
             };
             res.json({ "screen": createdScreen });
         } catch (err) {
@@ -182,7 +198,7 @@ v1_router.route('/theatres/:theatre_id/screens/:screen_id')
     .get(async (req, res) => {
         const { screen_id } = req.params;
         try {
-            const result = await query('SELECT screen_name, screen_total_seats FROM screens WHERE screen_id = ?', [screen_id]);
+            const result = await query('SELECT * FROM screens WHERE screen_id = ?', [screen_id]);
             res.json(result[0]);
         } catch (err) {
             res.status(500).json({ "error": err.message });
@@ -204,7 +220,7 @@ v1_router.route('/theatres/:theatre_id/screens/:screen_id/seats')
     .get(async (req, res) => {
         const { screen_id } = req.params;
         try {
-            const result = await query('SELECT * FROM seat_details WHERE screen_id = ?', [screen_id]);
+            const result = await query('SELECT seat_id,row_num,seat_number,seat_type_id,seat_type_name FROM seat_details WHERE screen_id = ?', [screen_id]);
             res.json(result);
         } catch (err) {
             res.status(500).json({ "error": err.message });

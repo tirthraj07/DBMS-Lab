@@ -8,7 +8,7 @@ auth_router.post('/login', async (req, res) => {
     const { theatre_user_email, theatre_user_password } = req.body;
 
     try {
-        const [user] = await query('SELECT theatre_user_password FROM theatre_users WHERE theatre_user_email = ?', [theatre_user_email]);
+        const [user] = await query('SELECT * FROM theatre_users WHERE theatre_user_email = ?', [theatre_user_email]);
         
         if (!user) {
             return res.status(404).json({ "error": "User not found" });
@@ -25,7 +25,8 @@ auth_router.post('/login', async (req, res) => {
             
             const jwt_payload = {
                 theatre_user_id: user.theatre_user_id,
-                theatre_user_email: user.theatre_user_email
+                theatre_user_email: user.theatre_user_email,
+                theatre_id:user.theatre_id
             }
 
             const token = jwt.createToken(jwt_payload)
@@ -36,7 +37,7 @@ auth_router.post('/login', async (req, res) => {
                 maxAge: 7 * 24 * 60 * 60 * 1000 
             });
 
-            res.json({ "success": "Login successful" });
+            res.json({ "success": "Login successful", theatre_user:jwt_payload });
         } else {
             res.status(401).json({ "error": "Invalid password" });
         }

@@ -12,7 +12,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
     return (
         <>
-            <DesktopNavbar isLoggedIn={isLoggedIn}/>
+            <DesktopNavbar isLoggedIn={isLoggedIn} />
         </>
     );
 }

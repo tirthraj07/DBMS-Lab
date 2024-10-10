@@ -22,6 +22,8 @@ export default function RootLayout({
   
     const isLoggedIn = cookieStore.has('webToken')
 
+
+
   return (
     <html lang="en">
       <body className={inter.className}>
