@@ -54,7 +54,7 @@ export default function SearchPage({
 
     async function handleTheatreClick(theatre_id: number){
         console.log("Theatre_id ", theatre_id)
-        window.location.href=`/theatres/${theatre_id}`
+        window.location.href=`/theatres/${theatre_id}/showtimes`
     }
 
     return (
