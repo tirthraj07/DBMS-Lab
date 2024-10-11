@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
     Select,
     SelectContent,
@@ -9,7 +9,7 @@ import {
     SelectLabel,
     SelectTrigger,
     SelectValue,
-  } from "@/components/ui/select"
+} from "@/components/ui/select";
 
 export default function AddShowPage() {
     const [movies, setMovies] = useState<any[]>([]);
@@ -18,6 +18,14 @@ export default function AddShowPage() {
     const [selectedMovieId, setSelectedMovieId] = useState<string | undefined>();
     const [selectedScreenId, setSelectedScreenId] = useState<string | undefined>();
     const [showtimeStartTime, setShowtimeStartTime] = useState<string | undefined>();
+
+    // Pricing state for different seat types
+    const [pricing, setPricing] = useState({
+        Standard: "",
+        Recliner: "",
+        Premium: "",
+        VIP: ""
+    });
 
     useEffect(() => {
         const fetchMovies = async () => {
@@ -36,16 +44,15 @@ export default function AddShowPage() {
         fetchScreens();
     }, []);
 
-    useEffect(()=>{
-        console.log(movies)
-    },[movies])
-
-    useEffect(()=>{
-        console.log(screens)
-    },[screens])
+    const handlePricingChange = (seatType: string, value: string) => {
+        setPricing(prev => ({
+            ...prev,
+            [seatType]: value
+        }));
+    };
 
     const handleAddShow = async () => {
-        if (!selectedScreenId || !selectedMovieId || !showtimeStartTime) {
+        if (!selectedScreenId || !selectedMovieId || !showtimeStartTime || !pricing.Standard || !pricing.Recliner || !pricing.Premium || !pricing.VIP) {
             alert("Please fill all the fields.");
             return;
         }
@@ -55,6 +62,7 @@ export default function AddShowPage() {
             showtime_start_time: showtimeStartTime,
         };
 
+        // Post the showtime data
         const response = await fetch(`/api/theatre/screens/${selectedScreenId}/showtimes`, {
             method: "POST",
             headers: {
@@ -63,12 +71,39 @@ export default function AddShowPage() {
             body: JSON.stringify(postData),
         });
 
-        if (response.ok) {
-            alert("Showtime added successfully!");
-            window.location.href='/theatre/shows';
-        } else {
+        if (!response.ok) {
             alert("Failed to add showtime.");
+            return;
         }
+
+        const data = await response.json();
+        const showtimeId = data.data.showtime_id; // Extract the showtime_id from the response
+
+        // Now post the pricing data
+        const pricingData = [
+            { price: pricing.Standard, seat_type_id: 1 },
+            { price: pricing.Recliner, seat_type_id: 2 },
+            { price: pricing.Premium, seat_type_id: 3 },
+            { price: pricing.VIP, seat_type_id: 4 }
+        ];
+
+        for (const priceEntry of pricingData) {
+            const pricingResponse = await fetch(`/api/theatre/screens/${selectedScreenId}/showtimes/${showtimeId}/pricings`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(priceEntry),
+            });
+        
+            if (!pricingResponse.ok) {
+                const errorData = await pricingResponse.json();
+                alert(`Failed to add pricing for seat type ${priceEntry.seat_type_id}: ${errorData.error}`);
+            }
+        }
+
+        alert("Pricing added successfully!");
+        window.location.href='/theatre/shows'
     };
 
     return (
@@ -116,6 +151,38 @@ export default function AddShowPage() {
                 onChange={(e) => setShowtimeStartTime(e.target.value)}
                 className="border border-gray-300 p-2 rounded-md"
             />
+
+            {/* Pricing Inputs */}
+            <div className="flex flex-col gap-2">
+                <input
+                    type="number"
+                    placeholder="Standard Price"
+                    value={pricing.Standard}
+                    onChange={(e) => handlePricingChange("Standard", e.target.value)}
+                    className="border border-gray-300 p-2 rounded-md"
+                />
+                <input
+                    type="number"
+                    placeholder="Recliner Price"
+                    value={pricing.Recliner}
+                    onChange={(e) => handlePricingChange("Recliner", e.target.value)}
+                    className="border border-gray-300 p-2 rounded-md"
+                />
+                <input
+                    type="number"
+                    placeholder="Premium Price"
+                    value={pricing.Premium}
+                    onChange={(e) => handlePricingChange("Premium", e.target.value)}
+                    className="border border-gray-300 p-2 rounded-md"
+                />
+                <input
+                    type="number"
+                    placeholder="VIP Price"
+                    value={pricing.VIP}
+                    onChange={(e) => handlePricingChange("VIP", e.target.value)}
+                    className="border border-gray-300 p-2 rounded-md"
+                />
+            </div>
 
             {/* Submit Button */}
             <button

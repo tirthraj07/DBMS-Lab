@@ -247,8 +247,8 @@ v1_router.route('/theatres/:theatre_id/screens/:screen_id/showtimes')
         const { upcoming } = req.query;  // query parameter for filtering upcoming showtimes
         try {
             let queryStr = `
-                SELECT showtime_id, screen_id, movie_id, showtime_start_time, showtime_end_time
-                FROM showtimes
+                SELECT showtime_id, screen_id, movie_id, showtime_start_time, showtime_end_time, movie_title
+                FROM showtimes_details
                 WHERE screen_id = ?
             `;
             let queryParams = [screen_id];
@@ -318,7 +318,7 @@ v1_router.route('/theatres/:theatre_id/screens/:screen_id/showtimes/:showtime_id
 
         try {
             const result = await query(
-                'SELECT screen_id, movie_id, showtime_start_time, showtime_end_time FROM showtimes WHERE showtime_id = ?',
+                'SELECT * FROM showtimes_details WHERE showtime_id = ?',
                 [showtime_id]
             );
 

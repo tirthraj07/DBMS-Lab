@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: { screen_
     const data = await response.json();
     // console.log(data);
     if(response.ok){
-        return NextResponse.json({success: "Added New Show time"}, {status:201});
+        return NextResponse.json({success: "Added New Show time", data:data.showtime}, {status:201});
     }
     else{
         return NextResponse.json({error:"Couldn't add new Show time"}, {status: 500})
