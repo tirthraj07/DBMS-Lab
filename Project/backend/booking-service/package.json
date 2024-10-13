@@ -1,5 +1,5 @@
 {
-  "name": "theatre-service",
+  "name": "booking-service",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
