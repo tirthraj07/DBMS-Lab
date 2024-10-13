@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store';
+
 import { JWTPayload } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 

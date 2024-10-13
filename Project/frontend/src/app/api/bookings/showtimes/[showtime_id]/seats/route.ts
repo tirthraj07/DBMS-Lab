@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store';
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest, {
@@ -11,11 +14,8 @@ export async function GET(request: NextRequest, {
 
     try {
         // Call the Express API to fetch bookings for the specified showtime_id
-        const response = await fetch(`${process.env.BOOKING_SERVICE_API}/api/v1/bookings/showtimes/${showtime_id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+        const response = await fetch(`${process.env.BOOKING_SERVICE_API}/api/v1/bookings/showtimes/${showtime_id}/seats`,{
+            headers: { 'Cache-Control': 'no-cache' }
         });
 
         const bookings = await response.json();

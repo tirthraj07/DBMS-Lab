@@ -32,26 +32,28 @@ export default function BookPage(
     const [selectedSeatIds, setSelectedSeatIds] = useState<number[]>([]); 
     const [totalCost, setTotalCost] = useState<number>(0);
     const [isProcessing, setProcessing] = useState<boolean>(false)
+    const [trigger, setTrigger] = useState<boolean>(false);
     
     useEffect(()=>{
 
         const fetchBookingsData = async() => {
             const response = await fetch(`/api/bookings/showtimes/${params.showtimes_id}/seats`)
             const data = await response.json();
-            // console.log(data)
+            console.log(data)
             setBookingIds(data)
         }
 
         const fetchPricingDetails = async() => {
             const response = await fetch(`/api/theatres/${params.theatre_id}/screens/${params.screen_id}/showtimes/${params.showtimes_id}/pricings`)
             const data = await response.json();
-            // console.log(data)
+            console.log(data)
             setPricing(data);
         }
 
         const fetchShowtimeDetails = async()=>{
             const response = await fetch(`/api/theatres/${params.theatre_id}/screens/${params.screen_id}/showtimes/${params.showtimes_id}`);
             const data = await response.json();
+            console.log(data)
             setShowtimeDetails(data);
         }
 
@@ -95,7 +97,7 @@ export default function BookPage(
             const result = await response.json();
             console.log("Seats booked successfully:", result);
             alert("Seats booked successfully")
-            window.location.reload();
+            window.location.href = `/theatres/${params.theatre_id}/showtimes`
             // You can also update the UI here to reflect the successful booking
     
         } catch (error) {
@@ -107,7 +109,7 @@ export default function BookPage(
     
 
     useEffect(() => {
-        if (bookingIds && bookingIds.length > 0 && seats.length > 0) {
+        if (bookingIds && bookingIds.length > 0 && seats.length > 0 && trigger) {
             const updatedSeats = seats.map(row => row.map((seat:any) => {
                 if (bookingIds.some(booking => booking.seat_id === seat.seat_id)) {
                     return { ...seat, state: "booked" };
@@ -116,14 +118,18 @@ export default function BookPage(
             }));
             setSeats(updatedSeats);
         }
-    }, [bookingIds, seats]);
+    }, [bookingIds, trigger]);
 
     useEffect(() => {
-        generateSeats();
+        const generateSeatsAsync = async () => {
+            await generateSeats();
+         };
+      
+         generateSeatsAsync();
       }, [rowNumber, maxColumns, seatData]);
 
 
-    const generateSeats = () => {
+    const generateSeats = async() => {
         if (rowNumber && maxColumns) {
           const generatedSeats = [];
           for (let i = 0; i < rowNumber; i++) {
@@ -133,6 +139,8 @@ export default function BookPage(
             }
             generatedSeats.push(row);
           }
+
+          console.log("GENERATED SEATS",generatedSeats)
       
           // Update with seatData
           if (seatData.length > 0) {
@@ -150,7 +158,28 @@ export default function BookPage(
                 })
               
             });
-            setSeats(updatedSeats);
+
+            const response = await fetch(`/api/bookings/showtimes/${params.showtimes_id}/seats`)
+            const data = await response.json();
+            console.log(data)
+
+            setBookingIds(data)
+
+            if (data && data.length > 0 && updatedSeats.length > 0) {
+                const updatedSeatsNew = updatedSeats.map(row => row.map((seat:any) => {
+                    if (data.some(booking => booking === seat.seat_id)) {
+                        return { ...seat, state: "booked" };
+                    }
+                    return seat;
+                }));
+                setSeats(updatedSeatsNew);
+            }
+            else{
+                setSeats(updatedSeats)
+            }
+
+
+            
           }
         }
       };
@@ -281,7 +310,7 @@ export default function BookPage(
 
                 <div className="w-[40%] m-auto p-3 mb-5 border flex flex-row-reverse justify-around">
                     <div>Total Cost: ₹{totalCost}</div>
-                    <Button disabled={isProcessing} onClick={handleBookSeats}>Book Seats</Button>
+                    <Button disabled={isProcessing} onClick={(e)=>handleBookSeats()}>Book Seats</Button>
                 </div>
             </div>
             </div>

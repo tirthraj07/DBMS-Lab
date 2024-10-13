@@ -81,20 +81,81 @@ v1_router.get('/bookings/showtimes/:showtime_id', async (req, res) => {
     }
 });
 
-// Book seats for a showtime using stored procedure
+// Book seats for a showtime 
 v1_router.post('/bookings/showtimes/:showtime_id', async (req, res) => {
     const { showtime_id } = req.params;
     const { customer_id, seat_ids } = req.body;  // Expecting seat_ids as an array
 
     try {
-        // Convert seat_ids to a comma-separated string
-        const seatIdsStr = seat_ids.join(',');
-
-        const procedureQuery = `
-            CALL book_movie(?, ?, ?)
+        // Step 1: Validate that seats are available
+        const seatCheckQuery = `
+            SELECT seat_id FROM booking_seats 
+            WHERE seat_id IN (?) AND showtime_id = ?
         `;
-        await query(procedureQuery, [customer_id, showtime_id, seatIdsStr]);
+        const bookedSeats = await query(seatCheckQuery, [seat_ids, showtime_id]);
+        console.log(bookedSeats)
 
+        if (bookedSeats && bookedSeats.length > 0) {
+            return res.status(400).json({ error: "One or more seats are already booked" });
+        }
+
+        // Step 2: Fetch screen_id from showtimes table
+        const screenQuery = `SELECT screen_id FROM showtimes WHERE showtime_id = ?`;
+        const [{ screen_id }] = await query(screenQuery, [showtime_id]);
+        
+
+        // Step 3: Fetch seat_type_id for each seat
+        const seatTypeQuery = `
+            SELECT seat_id, seat_type_id FROM seats 
+            WHERE seat_id IN (?)
+        `;
+        const seatTypes = await query(seatTypeQuery, [seat_ids]);
+        console.log(seatTypes)
+
+        // Step 4: Fetch price for each seat type
+        const pricingQuery = `
+            SELECT price, seat_type_id FROM pricings 
+            WHERE showtime_id = ? AND screen_id = ? AND seat_type_id IN (?)
+        `;
+        const seatTypeIds = seatTypes.map(seat => seat.seat_type_id);
+        console.log(seatTypeIds)
+        const pricingData = await query(pricingQuery, [showtime_id, screen_id, seatTypeIds]);
+
+        // Create a map of seat_type_id to price for easy lookup
+        const priceMap = pricingData.reduce((map, pricing) => {
+            map[pricing.seat_type_id] = Number(pricing.price);
+            return map;
+        }, {});
+
+        console.log(priceMap)
+        // Step 5: Calculate total amount
+        let totalAmount = 0;
+        seatTypes.forEach(seat => {
+            totalAmount += priceMap[seat.seat_type_id];
+        });
+
+        // Step 6: Insert into bookings table
+        const bookingInsertQuery = `
+            INSERT INTO bookings (booking_total_seats, booking_total_amount, customer_id, showtime_id)
+            VALUES (?, ?, ?, ?)
+        `;
+        const bookingResult = await query(bookingInsertQuery, [seat_ids.length, totalAmount, customer_id, showtime_id]);
+
+        const booking_id = bookingResult.insertId;
+
+        // Step 7: Insert into booking_seats table
+        const seatInsertQuery = `
+            INSERT INTO booking_seats (booking_id, seat_id, showtime_id)
+            VALUES (?, ?, ?)
+        `;
+
+        const seatInsertPromises = seat_ids.map(seat_id => {
+            return query(seatInsertQuery, [booking_id, seat_id, showtime_id]);
+        });
+
+        await Promise.all(seatInsertPromises);
+
+        // Booking successful
         res.status(201).json({ message: "Booking successful" });
     } catch (error) {
         if (error.sqlState === '45000') {
@@ -106,6 +167,7 @@ v1_router.post('/bookings/showtimes/:showtime_id', async (req, res) => {
         }
     }
 });
+
 
 // Fetch booked seats by showtime_id
 v1_router.get('/bookings/showtimes/:showtime_id/seats', async (req, res) => {
@@ -122,6 +184,8 @@ v1_router.get('/bookings/showtimes/:showtime_id/seats', async (req, res) => {
         if (bookedSeats.length === 0) {
             return res.status(404).json([]);
         }
+
+        console.log(bookedSeats)
 
         res.json(bookedSeats.map(seat => seat.seat_id));
     } catch (error) {

@@ -3,6 +3,8 @@ GRANT SELECT ON dbms_project.customer_logs TO 'booking-service'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbms_project.bookings  TO 'booking-service'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbms_project.booking_seats TO 'booking-service'@'%';
 GRANT SELECT ON dbms_project.pricings TO 'booking-service'@'%';
+GRANT SELECT ON dbms_project.showtimes TO 'booking-service'@'%';
+GRANT SELECT ON dbms_project.seats TO 'booking-service'@'%';
 
 GRANT SELECT ON dbms_project.booking_details TO 'booking-service'@'%';
 GRANT SELECT ON dbms_project.public_customer_view TO 'booking-service'@'%';
