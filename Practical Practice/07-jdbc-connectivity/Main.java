@@ -108,6 +108,8 @@ public class Main {
 		displayUsers(conn);
 		updateUserInfo(conn);
 		displayUsers(conn);
+
+		conn.close();
 		
 		/*
 		 *	-- OUTPUT --
