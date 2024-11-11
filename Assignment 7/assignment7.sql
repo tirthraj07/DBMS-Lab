@@ -9,238 +9,269 @@ Note: Instructor will Frame the problem statement for writing PL/SQLblock for al
 types of Triggers in line with above statement. 
 */
 
-
-CREATE TABLE Books (
+CREATE TABLE books (
     book_id INT PRIMARY KEY AUTO_INCREMENT,
     book_name VARCHAR(50) NOT NULL,
-    count INT NOT NULL DEFAULT 0
+    author VARCHAR(50)
 );
 
-CREATE TABLE IssueTable (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    person_name VARCHAR(50) NOT NULL,
-    book_id INT NOT NULL UNIQUE,
-    doi DATE,
-    FOREIGN KEY (book_id) REFERENCES Books (book_id) ON DELETE NO ACTION
+CREATE TABLE library (
+    book_id INT PRIMARY KEY,
+    quantity INT DEFAULT 0,
+    price DECIMAL(10,2) DEFAULT 0,
+
+    -- CHECKS
+    CHECK(quantity>=0),
+    CHECK(price>=0),
+
+    -- FOREIGN KEY REFERENCES
+    FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
-CREATE TABLE Library_Audit (
+CREATE TABLE book_issuers (
+    issuer_id INT PRIMARY KEY AUTO_INCREMENT,
+    issuer_name VARCHAR(50) NOT NULL,
+    issued_quantity INT DEFAULT 1,
+    issued_price INT,
+    
+    -- FOREIGN KEY DECLARATIONS
+    book_id INT,
+
+    -- FOREIGN KEY REFERENCES
+    FOREIGN KEY (book_id) REFERENCES library(book_id)
+);
+
+CREATE TABLE library_audit (
     audit_id INT PRIMARY KEY AUTO_INCREMENT,
     book_id INT,
     book_name VARCHAR(50),
-    count INT,
-    action VARCHAR(50), -- "UPDATE" or "DELETE"
-    person_name VARCHAR(50) NOT NULL DEFAULT "NULL",
+    quantity INT,
+    price INT,
+    action VARCHAR(100),
+    issuer_name VARCHAR(50) DEFAULT "NULL",
     action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE VIEW book_details AS
+SELECT * FROM books 
+NATURAL JOIN library;
+
+INSERT INTO books (book_id, book_name, author)
+VALUES
+(1, 'Let us C', 'XYZ'),
+(2, 'Let us C++', 'ABC'),
+(3, 'Python Programming', 'BCD'),
+(4, 'Java Programming', 'CDE');
 
 DELIMITER //
 
-CREATE TRIGGER before_INSERT_on_books
-BEFORE INSERT ON Books
+CREATE TRIGGER new_library_book
+AFTER INSERT ON library
 FOR EACH ROW
 BEGIN
-DECLARE new_book_id INT;
+    DECLARE new_book_name VARCHAR(50);
 
-INSERT INTO Library_Audit (book_id, book_name, count, action) VALUES (NEW.book_id, NEW.book_name, NEW.count, 'INSERT');
-
-END;
-//
-
-CREATE TRIGGER before_delete_on_books
-BEFORE DELETE ON Books
-FOR EACH ROW
-BEGIN
-
-INSERT INTO Library_Audit (book_id, book_name, count, action) VALUES (OLD.book_id, OLD.book_name, OLD.count, 'DELETE');
-
-END;
-//
-
--- Trigger for checking book availability before issuing
-CREATE TRIGGER before_insert_in_issue_table
-BEFORE INSERT ON IssueTable
-FOR EACH ROW
-BEGIN
-    -- Check if the book count > 0
-    DECLARE bookCount INT;
-    SELECT count INTO bookCount
-    FROM Books
+    SELECT book_name INTO new_book_name
+    FROM books
     WHERE book_id = NEW.book_id;
 
-    -- Raise an error if no copies are available
-    IF bookCount <= 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot issue book: No copies available';
-    END IF;
+    INSERT INTO library_audit (book_id, book_name, quantity, price, action)
+    VALUES
+    (NEW.book_id, new_book_name, NEW.quantity, NEW.price, "NEW BOOK AVAILABLE");
 
-    -- Insert info into Library Audit for the issuance (before the actual insert)
-    INSERT INTO Library_Audit (book_id, book_name, count, action, person_name)
-    VALUES (NEW.book_id, (SELECT book_name FROM Books WHERE book_id = NEW.book_id), bookCount, 'BEFORE INSERT', NEW.person_name);
-END;
-//
-
-CREATE PROCEDURE DecrementBookCount(IN p_book_id INT)
-BEGIN
-    UPDATE Books SET count = count - 1 WHERE book_id = p_book_id;
-END;
-//
-
--- Trigger for decrementing book count after issuing
-CREATE TRIGGER after_insert_in_issue_table
-AFTER INSERT ON IssueTable
-FOR EACH ROW
-BEGIN
-    DECLARE newBookCount INT;
-    DECLARE bookName VARCHAR(255);
-    
-    -- Decrement book count
-    CALL DecrementBookCount(NEW.book_id);
-
-    -- Get the new book count after decrement
-    
-    SELECT count, book_name INTO newBookCount, bookName
-    FROM Books
-    WHERE book_id = NEW.book_id;
-
-    -- Insert into Library Audit for the issuance
-    INSERT INTO Library_Audit (book_id, book_name, count, action, person_name)
-    VALUES (NEW.book_id, bookName, newBookCount, 'AFTER INSERT', NEW.person_name);
-END;
-//
+END //
 
 DELIMITER ;
 
 
+INSERT INTO library (book_id, quantity, price)
+VALUES
+(1, 100, 250),
+(2, 200, 300),
+(3, 150, 200),
+(4, 50, 100);
+
 /*
-BEFORE INSERT
-
-mysql> SELECT * FROM Books;
-Empty set (0.00 sec)
-
-mysql> SELECT * FROM Library_Audit;
-Empty set (0.01 sec)
+SELECT * FROM library_audit;
++----------+---------+--------------------+----------+-------+--------------------+-------------+---------------------+
+| audit_id | book_id | book_name          | quantity | price | action             | issuer_name | action_timestamp    |
++----------+---------+--------------------+----------+-------+--------------------+-------------+---------------------+
+|        1 |       1 | Let us C           |      100 |   250 | NEW BOOK AVAILABLE | NULL        | 2024-11-04 08:31:47 |
+|        2 |       2 | Let us C++         |      200 |   300 | NEW BOOK AVAILABLE | NULL        | 2024-11-04 08:31:47 |
+|        3 |       3 | Python Programming |      150 |   200 | NEW BOOK AVAILABLE | NULL        | 2024-11-04 08:31:47 |
+|        4 |       4 | Java Programming   |       50 |   100 | NEW BOOK AVAILABLE | NULL        | 2024-11-04 08:31:47 |
++----------+---------+--------------------+----------+-------+--------------------+-------------+---------------------+
 */
 
-INSERT INTO Books (book_name, count) VALUES 
-    ('To Kill a Mockingbird', 5),
-    ('1984', 7),
-    ('The Great Gatsby', 3),
-    ('Pride and Prejudice', 6),
-    ('The Catcher in the Rye', 4),
-    ('Brave New World', 8),
-    ('The Hobbit', 9),
-    ('Fahrenheit 451', 1),
-    ('Jane Eyre', 10);
+DELIMITER //
+
+CREATE TRIGGER update_library_books
+BEFORE UPDATE ON library
+FOR EACH ROW
+BEGIN
+    DECLARE action VARCHAR(100);
+    DECLARE book_name VARCHAR(50);
+
+    IF NEW.quantity IS NULL THEN
+        SET NEW.quantity = OLD.quantity;
+    END IF;
+
+    IF NEW.price IS NULL THEN
+        SET NEW.price = OLD.price;
+    END IF;
+
+    IF NEW.quantity != OLD.quantity THEN
+        SET action = "Changes in book quantity";
+    ELSEIF NEW.price != OLD.price THEN
+        SET action = "Changes in book price";
+    ELSE
+        SET action = "Changes in book data";
+    END IF;
+
+    SELECT books.book_name INTO book_name
+    FROM books
+    WHERE books.book_id = NEW.book_id;
+
+    INSERT INTO library_audit (book_id, book_name, quantity, price, action)
+    VALUES
+    (NEW.book_id, book_name, NEW.quantity, NEW.price, action);
+
+END //
+
+DELIMITER ;
+
+
+UPDATE library
+SET quantity = 200
+WHERE book_id = 1;
+
+UPDATE library
+SET price = 200
+WHERE book_id = 2;
 
 /*
-mysql> SELECT * FROM Books;
-+---------+------------------------+-------+
-| book_id | book_name              | count |
-+---------+------------------------+-------+
-|       1 | To Kill a Mockingbird  |     5 |
-|       2 | 1984                   |     7 |
-|       3 | The Great Gatsby       |     3 |
-|       4 | Pride and Prejudice    |     6 |
-|       5 | The Catcher in the Rye |     4 |
-|       6 | Brave New World        |     8 |
-|       7 | The Hobbit             |     9 |
-|       8 | Fahrenheit 451         |     1 |
-|       9 | Jane Eyre              |    10 |
-+---------+------------------------+-------+
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+| audit_id | book_id | book_name          | quantity | price | action                   | issuer_name | action_timestamp    |
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+|        1 |       1 | Let us C           |      100 |   250 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        2 |       2 | Let us C++         |      200 |   300 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        3 |       3 | Python Programming |      150 |   200 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        4 |       4 | Java Programming   |       50 |   100 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        5 |       1 | Let us C           |      200 |   250 | Changes in book quantity | NULL        | 2024-11-04 08:49:37 |
+|        6 |       2 | Let us C++         |      200 |   200 | Changes in book price    | NULL        | 2024-11-04 08:50:38 |
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+*/
 
-mysql> SELECT * FROM Library_Audit;
-+----------+---------+------------------------+-------+--------+-------------+---------------------+
-| audit_id | book_id | book_name              | count | action | person_name | action_timestamp    |
-+----------+---------+------------------------+-------+--------+-------------+---------------------+
-|        1 |       0 | To Kill a Mockingbird  |     5 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        2 |       0 | 1984                   |     7 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        3 |       0 | The Great Gatsby       |     3 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        4 |       0 | Pride and Prejudice    |     6 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        5 |       0 | The Catcher in the Rye |     4 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        6 |       0 | Brave New World        |     8 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        7 |       0 | The Hobbit             |     9 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        8 |       0 | Fahrenheit 451         |     1 | INSERT | NULL        | 2024-09-21 12:35:40 |
-|        9 |       0 | Jane Eyre              |    10 | INSERT | NULL        | 2024-09-21 12:35:40 |
-+----------+---------+------------------------+-------+--------+-------------+---------------------+
+DELIMITER //
+
+CREATE TRIGGER before_book_removal
+BEFORE DELETE ON books
+FOR EACH ROW
+BEGIN
+    DECLARE EXIT HANDLER FOR NOT FOUND
+    BEGIN
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "entry not found";
+    END;
+
+    INSERT INTO library_audit (book_id, book_name, quantity, price, action)
+    VALUES
+    (OLD.book_id, OLD.book_name, 0, 0, "Book Deletion");
+END //
+
+DELIMITER ;
+
+DELETE FROM books
+WHERE book_id = 4;
+
+/*
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+| audit_id | book_id | book_name          | quantity | price | action                   | issuer_name | action_timestamp    |
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+|        1 |       1 | Let us C           |      100 |   250 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        2 |       2 | Let us C++         |      200 |   300 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        3 |       3 | Python Programming |      150 |   200 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        4 |       4 | Java Programming   |       50 |   100 | NEW BOOK AVAILABLE       | NULL        | 2024-11-04 08:31:47 |
+|        5 |       1 | Let us C           |      200 |   250 | Changes in book quantity | NULL        | 2024-11-04 08:49:37 |
+|        6 |       2 | Let us C++         |      200 |   200 | Changes in book price    | NULL        | 2024-11-04 08:50:38 |
+|        7 |       4 | Java Programming   |        0 |     0 | Book Deletion            | NULL        | 2024-11-04 09:01:03 |
++----------+---------+--------------------+----------+-------+--------------------------+-------------+---------------------+
+*/
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_in_book_issuers
+BEFORE INSERT ON book_issuers
+FOR EACH ROW
+BEGIN
+    DECLARE book_name VARCHAR(50);
+    DECLARE book_price DECIMAL(10,2);
+
+    IF EXISTS (SELECT '1' FROM library WHERE library.book_id = NEW.book_id AND library.quantity >= NEW.issued_quantity) THEN
+        SELECT books.book_name INTO book_name
+        FROM books
+        WHERE book_id = NEW.book_id;
+
+        SELECT price INTO book_price
+        FROM library
+        WHERE book_id = NEW.book_id;
+
+        UPDATE library
+        SET quantity = quantity - NEW.issued_quantity
+        WHERE book_id = NEW.book_id;
+
+        SET NEW.issuer_name = UPPER(TRIM(NEW.issuer_name));
+        SET NEW.issued_price = NEW.issued_quantity * book_price;
+
+        INSERT INTO library_audit (book_id, book_name, quantity, price, action, issuer_name)
+        VALUES
+        (NEW.book_id, book_name, NEW.issued_quantity, NEW.issued_price, "Issued Book(s)", NEW.issuer_name);
+    ELSE
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Couldn't proceed with the book issue";    
+    END IF;
+
+END //
+
+DELIMITER ;
+
+
+INSERT INTO book_issuers (issuer_name, book_id, issued_quantity)
+VALUES 
+(
+    'Tirthraj Mahajan', 2, 3
+);
+
+/*
+mysql> SELECT * FROM book_issuers;
++-----------+------------------+-----------------+--------------+---------+
+| issuer_id | issuer_name      | issued_quantity | issued_price | book_id |
++-----------+------------------+-----------------+--------------+---------+
+|         1 | TIRTHRAJ MAHAJAN |               3 |          600 |       2 |
++-----------+------------------+-----------------+--------------+---------+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM book_details;
++---------+--------------------+--------+----------+--------+
+| book_id | book_name          | author | quantity | price  |
++---------+--------------------+--------+----------+--------+
+|       1 | Let us C           | XYZ    |      200 | 250.00 |
+|       2 | Let us C++         | ABC    |      197 | 200.00 |
+|       3 | Python Programming | BCD    |      150 | 200.00 |
++---------+--------------------+--------+----------+--------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM library_audit;
++----------+---------+--------------------+----------+-------+--------------------------+------------------+---------------------+
+| audit_id | book_id | book_name          | quantity | price | action                   | issuer_name      | action_timestamp    |
++----------+---------+--------------------+----------+-------+--------------------------+------------------+---------------------+
+|        1 |       1 | Let us C           |      100 |   250 | NEW BOOK AVAILABLE       | NULL             | 2024-11-04 08:31:47 |
+|        2 |       2 | Let us C++         |      200 |   300 | NEW BOOK AVAILABLE       | NULL             | 2024-11-04 08:31:47 |
+|        3 |       3 | Python Programming |      150 |   200 | NEW BOOK AVAILABLE       | NULL             | 2024-11-04 08:31:47 |
+|        4 |       4 | Java Programming   |       50 |   100 | NEW BOOK AVAILABLE       | NULL             | 2024-11-04 08:31:47 |
+|        5 |       1 | Let us C           |      200 |   250 | Changes in book quantity | NULL             | 2024-11-04 08:49:37 |
+|        6 |       2 | Let us C++         |      200 |   200 | Changes in book price    | NULL             | 2024-11-04 08:50:38 |
+|        7 |       4 | Java Programming   |        0 |     0 | Book Deletion            | NULL             | 2024-11-04 09:01:03 |
+|        8 |       2 | Let us C++         |      197 |   200 | Changes in book quantity | NULL             | 2024-11-04 09:25:18 |
+|        9 |       2 | Let us C++         |        3 |   600 | Issued Book(s)           | TIRTHRAJ MAHAJAN | 2024-11-04 09:25:18 |
++----------+---------+--------------------+----------+-------+--------------------------+------------------+---------------------+
 9 rows in set (0.00 sec)
-
 */
-
-INSERT INTO IssueTable (person_name, book_id, doi) VALUES 
-    (
-        'Tirthraj Mahajan', 
-        (SELECT book_id FROM Books WHERE book_name = 'To Kill a Mockingbird'),
-        '2024-08-01'
-    ),
-    (
-        'Ariana Smith', 
-        (SELECT book_id FROM Books WHERE book_name = '1984'),
-        '2024-08-05'
-    ),
-    (
-        'John Doe', 
-        (SELECT book_id FROM Books WHERE book_name = 'The Great Gatsby'),
-        '2024-07-20'
-    ),
-    (
-        'Emily Johnson', 
-        (SELECT book_id FROM Books WHERE book_name = 'Pride and Prejudice'),
-        '2024-06-15'
-    ),
-    (
-        'Michael Brown', 
-        (SELECT book_id FROM Books WHERE book_name = 'The Catcher in the Rye'),
-        '2024-08-10'
-    ),
-    (
-        'Sarah Davis', 
-        (SELECT book_id FROM Books WHERE book_name = 'Brave New World'),
-        '2024-05-22'
-    ),
-    (
-        'David Wilson', 
-        (SELECT book_id FROM Books WHERE book_name = 'The Hobbit'),
-        '2024-08-12'
-    ),
-    (
-        'Sophia Martinez', 
-        (SELECT book_id FROM Books WHERE book_name = 'Fahrenheit 451'),
-        '2024-07-30'
-    ),
-    (
-        'James Taylor', 
-        (SELECT book_id FROM Books WHERE book_name = 'Jane Eyre'),
-        '2024-08-01'
-    ),
-    (
-        'Olivia Garcia', 
-        (SELECT book_id FROM Books WHERE book_name = 'To Kill a Mockingbird'),
-        '2024-08-07'
-    ),
-    (
-        'Liam Anderson', 
-        (SELECT book_id FROM Books WHERE book_name = '1984'),
-        '2024-06-25'
-    ),
-    (
-        'Emma Thompson', 
-        (SELECT book_id FROM Books WHERE book_name = 'The Great Gatsby'),
-        '2024-07-15'
-    ),
-    (
-        'Noah Martinez', 
-        (SELECT book_id FROM Books WHERE book_name = 'Pride and Prejudice'),
-        '2024-08-02'
-    ),
-    (
-        'Isabella Lee', 
-        (SELECT book_id FROM Books WHERE book_name = 'The Catcher in the Rye'),
-        '2024-08-03'
-    ),
-    (
-        'Ethan Moore', 
-        (SELECT book_id FROM Books WHERE book_name = 'Brave New World'),
-        '2024-08-09'
-    );

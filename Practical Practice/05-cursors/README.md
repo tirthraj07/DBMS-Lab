@@ -1,2 +1,0 @@
-Cursors: (All types: Implicit, Explicit, Cursor FOR Loop, Parameterized Cursor)
-Write a PL/SQL block of code using a parameterized Cursor that will merge the data available in the newly created table N_EmpId with the data available in the table O_EmpId. If the data in the first table already exists in the second table, then that data should be skipped.

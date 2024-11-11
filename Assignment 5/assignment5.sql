@@ -11,63 +11,75 @@ Write a PUSQLblock to use procedure created with above requirement.
   Result(Roll,Name, Class)
 */
 
-CREATE TABLE StudMarks (
-  roll INT PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
-  total_marks INT NOT NULL
+CREATE TABLE stud_marks (
+    roll_no INT PRIMARY KEY AUTO_INCREMENT,
+    stud_name VARCHAR(50) NOT NULL,
+    total_marks INT NOT NULL,
+    CHECK((total_marks > 0) AND (total_marks <= 1500))
 );
 
-
-CREATE TABLE Result (
-  roll INT PRIMARY KEY,
-  class VARCHAR(50) CHECK IN ('Distinction', 'First', 'Higher Second Class'),
-  FOREIGN KEY (roll) REFERENCES StudMarks (roll)
+CREATE TABLE result (
+    roll_no INT PRIMARY KEY,
+    stud_name VARCHAR(50) NOT NULL,
+    class VARCHAR(50) NOT NULL,
+    CHECK (class IN ('distinction', 'first class', 'higher second class', 'passed'))
 );
 
-CREATE VIEW StudClass AS
-SELECT roll, name, total_marks, class
-FROM StudMarks
-INNER JOIN Result
-ON StudMarks.roll = Result.roll;
+INSERT INTO stud_marks (roll_no, stud_name, total_marks)
+VALUES
+(1, 'Tirthraj', 1450),
+(2, 'Aditya', 950),
+(3, 'Arnav', 845),
+(4, 'Ninad', 700);
 
+DELIMITER //
 
-INSERT INTO StudMarks 
-  (roll, name, total_marks) VALUES
-  (31242, 'Tirthraj Mahajan', 1550),
-  (31237, 'Amey Kulkarni', 950),
-  (31228, 'Advait Joshi', 850),
-  (31229, 'Rinit Jain', 980),
-  (31230, 'Aniket Joshi', 1600);
-
-delimiter //
-
--- Create PROCEDURE to calculate the result
-CREATE PROCEDURE proc_result(IN marks int, OUT class char(20))
+CREATE FUNCTION find_class (marks INT)
+RETURNS VARCHAR(50)
+DETERMINISTIC
 BEGIN
-    IF(marks < 1500 && marks > 990) THEN
-        SET class = 'Distinction';
+    IF (marks <= 1500 && marks >= 990) THEN
+        RETURN "distinction";
+    ELSEIF (marks >= 900) THEN
+        RETURN "first class";
+    ELSEIF (marks >= 825) THEN
+        RETURN "higher second class";
+    ELSE
+        RETURN "passed";
     END IF;
-    IF(marks < 989 && marks > 890) THEN
-        SET class = 'First Class';
-    END IF;
-    IF(marks < 889 && marks > 825) THEN
-        SET class = 'Higher Second Class';
-    END IF;
-    IF(marks < 824 && marks > 750) THEN
-        SET class = 'Second Class';
-    END IF;
-    IF(marks < 749 && marks > 650) THEN
-        SET class = 'Passed';
-    END IF;
-    IF(marks < 649) THEN
-        SET class = 'Fail';
-    END IF;
-END;
+END //
 
 
--- Create function to store marks
+CREATE PROCEDURE get_result (IN roll_no INT, OUT class VARCHAR(50))
+BEGIN
+    DECLARE student_name VARCHAR(50);
+    DECLARE marks INT;
 
-CREATE FUNCTION final_result(roll_no int)
-RETURNS INT
+    DECLARE EXIT HANDLER FOR NOT FOUND
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = 'No student found';
+    END;
 
-delimiter ;
+    START TRANSACTION;
+        SELECT stud_name, total_marks INTO student_name, marks
+        FROM stud_marks
+        WHERE
+        stud_marks.roll_no = roll_no;
+
+        SELECT find_class(marks) INTO class;
+
+        IF EXISTS (SELECT '1' FROM result WHERE result.roll_no = roll_no) THEN
+            UPDATE result
+            SET 
+            result.class = class,
+            result.stud_name = student_name
+            WHERE result.roll_no = roll_no;
+        ELSE
+            INSERT INTO result (roll_no, stud_name, class) VALUES (roll_no, student_name, class);
+        END IF;
+    COMMIT;
+    
+END //
+
+DELIMITER ;
